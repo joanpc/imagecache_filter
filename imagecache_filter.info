@@ -1,0 +1,7 @@
+name = Image Cache filter
+description = Allows using image cache on inline images.
+package = "Input filters"
+dependencies[] = filter
+dependencies[] = imagecache
+version = "6.x-0.1"
+core = "6.x"

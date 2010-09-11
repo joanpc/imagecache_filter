@@ -1,0 +1,65 @@
+<?php
+/*
+ * Implementation of hook_filter
+ */
+function imagecache_filter($op, $delta = 0, $format = -1, $text = '', $cache_id = 0) {
+  switch ($op) {
+    case 'list':
+      return array(0 => t('Image Cache filter'));
+
+    case 'description':
+      return t('Allows using image cache on images on a node body');
+
+    case "process":  
+      if ($preset = variable_get("imagecache_filter_preset_$format", null)) {
+      return _imagecache_filter_process($text, $preset);
+      }
+      else return $text;
+ 
+    case 'settings':
+      return _imagecache_filter_settings($format);
+          
+    default:
+      return $text;
+  }
+}
+
+function _imagecache_filter_settings($format) {
+ // Get imageCache presets
+ $presets = array();
+ foreach (imagecache_presets() as $preset ) {
+      $presets[$preset['presetname']] = $preset['presetname'];
+ }
+  
+ $form['imagecache_filter_settings'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Image Cache Filter'),
+ );
+ 
+ $form['imagecache_filter_settings']["imagecache_filter_preset_$format"] = array (
+    '#type' => 'select',
+    '#title' => t('Image cache preset'),
+    '#options' => $presets,
+    '#default_value'  =>  variable_get("imagecache_filter_preset_$format", ''),
+ 
+ );
+ return $form;
+}
+/*
+ * Process the images
+ */
+function _imagecache_filter_process($text, $preset) {
+  global $base_url;
+  $files_path =  strtr  ( file_directory_path() , '\\'  , '/' );
+  $path = addcslashes  ($files_path  , '/' );
+  
+  $url = addcslashes  ($base_url  , '/:' );
+  
+  $text = preg_replace('/summer/', 'pepe: '. $files_path . ' ' . $url , $text);
+  //TODO: Ignore images already using imagecache
+  $pattern = '/\<(img|IMG)(.+)src\=\"('. $url . '\/|\/)' . $path . '\/(.*)\.(jpg|png)\"(.*)\>/';
+  $replacement = '<img $2 src="$3' . $files_path . '/imagecache/'. $preset . '/$4.$5"$6>';
+  $text = preg_replace($pattern, $replacement,  $text);
+  
+  return $text;
+}
